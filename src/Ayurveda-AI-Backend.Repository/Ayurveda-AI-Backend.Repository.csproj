@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ayurveda-AI-Backend.Domain\Ayurveda-AI-Backend.Domain.csproj" />
+    <ProjectReference Include="..\Ayurveda-AI-Backend.Infrastructure\Ayurveda-AI-Backend.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Ayurveda_AI_Backend.Repository</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

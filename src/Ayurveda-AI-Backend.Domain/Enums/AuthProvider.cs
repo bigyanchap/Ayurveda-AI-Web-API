@@ -1,0 +1,7 @@
+namespace Ayurveda_AI_Backend.Domain.Enums;
+
+public enum AuthProvider
+{
+    Email = 1,
+    Google = 2
+}

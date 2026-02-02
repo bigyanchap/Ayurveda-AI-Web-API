@@ -1,0 +1,51 @@
+# Build outputs
+bin/
+obj/
+**/bin/
+**/obj/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj.user
+*.cache
+*.dtbcache.v2
+*.futdcache.v2
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+**/Logs/
+
+# Test results
+TestResults/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+**/packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# User-specific files
+*.rsuser
+*.sln.ide
+*.DotSettings.user
+
+# Local settings
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json

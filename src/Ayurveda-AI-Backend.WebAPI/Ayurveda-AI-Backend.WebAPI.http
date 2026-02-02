@@ -1,0 +1,6 @@
+@Ayurveda_AI_Backend.WebAPI_HostAddress = http://localhost:5068
+
+GET {{Ayurveda_AI_Backend.WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
