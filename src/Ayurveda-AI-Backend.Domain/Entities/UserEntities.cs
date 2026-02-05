@@ -12,7 +12,7 @@ public class User
     public bool IsEmailVerified { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? LastLoginAt { get; set; }
+    public DateTime? LastSignInAt { get; set; }
 
     public UserProfile? Profile { get; set; }
     public ICollection<PrakritiQuizResponse> PrakritiQuizResponses { get; set; } = new List<PrakritiQuizResponse>();

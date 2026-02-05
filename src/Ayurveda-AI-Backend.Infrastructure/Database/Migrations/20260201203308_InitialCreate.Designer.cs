@@ -569,7 +569,7 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                     b.Property<bool>("IsEmailVerified")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime?>("LastLoginAt")
+                    b.Property<DateTime?>("LastSignInAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Phone")

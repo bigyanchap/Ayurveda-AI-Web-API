@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Ayurveda_AI_Backend.WebAPI</RootNamespace>
+    <UserSecretsId>6cd85d3a-66b3-44f4-9402-4e6f6f5052b2</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
