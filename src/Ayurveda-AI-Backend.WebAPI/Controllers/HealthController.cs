@@ -12,9 +12,6 @@ namespace Ayurveda_AI_Backend.WebAPI.Controllers;
 public class HealthController : ControllerBase
 {
     private readonly IHealthService _healthService;
-    private readonly IRepository<HealthIndicator> _indicatorRepository;
-    private readonly IRepository<PoopType> _poopTypeRepository;
-    private readonly IRepository<EnergyLevel> _energyLevelRepository;
     private readonly IRepository<QuizQuestion> _quizRepository;
     private readonly IRepository<PrakritiResult> _prakritiRepository;
     private readonly IRepository<VikritiSnapshot> _vikritiRepository;
@@ -23,9 +20,6 @@ public class HealthController : ControllerBase
 
     public HealthController(
         IHealthService healthService,
-        IRepository<HealthIndicator> indicatorRepository,
-        IRepository<PoopType> poopTypeRepository,
-        IRepository<EnergyLevel> energyLevelRepository,
         IRepository<QuizQuestion> quizRepository,
         IRepository<PrakritiResult> prakritiRepository,
         IRepository<VikritiSnapshot> vikritiRepository,
@@ -33,9 +27,6 @@ public class HealthController : ControllerBase
         IRepository<GeminiQuestion> geminiQuestionRepository)
     {
         _healthService = healthService;
-        _indicatorRepository = indicatorRepository;
-        _poopTypeRepository = poopTypeRepository;
-        _energyLevelRepository = energyLevelRepository;
         _quizRepository = quizRepository;
         _prakritiRepository = prakritiRepository;
         _vikritiRepository = vikritiRepository;
@@ -67,6 +58,19 @@ public class HealthController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("get-prakriti-result/{userId:guid}")]
+    [Authorize]
+    public async Task<ActionResult<PrakritiResultDto>> GetPrakritiResult(Guid userId)
+    {
+        var result = await _healthService.GetPrakritiResultAsync(userId);
+        if (result == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(result);
+    }
+
     [HttpPost("prakriti")]
     [Authorize]
     public async Task<ActionResult<PrakritiResultDto>> SavePrakriti([FromBody] PrakritiResultDto dto)
@@ -91,25 +95,12 @@ public class HealthController : ControllerBase
         return Ok();
     }
 
-    [HttpGet("indicators")]
-    public async Task<ActionResult<IReadOnlyList<HealthIndicator>>> GetIndicators()
+    [HttpGet("get-indicators/{userId:guid}")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<HealthIndicatorDto>>> GetIndicators(Guid userId)
     {
-        var indicators = await _indicatorRepository.GetAllAsync();
+        var indicators = await _healthService.GetIndicatorsAsync(userId);
         return Ok(indicators);
-    }
-
-    [HttpGet("poop-types")]
-    public async Task<ActionResult<IReadOnlyList<PoopType>>> GetPoopTypes()
-    {
-        var types = await _poopTypeRepository.GetAllAsync();
-        return Ok(types);
-    }
-
-    [HttpGet("energy-levels")]
-    public async Task<ActionResult<IReadOnlyList<EnergyLevel>>> GetEnergyLevels()
-    {
-        var levels = await _energyLevelRepository.GetAllAsync();
-        return Ok(levels);
     }
 
     [HttpGet("quiz-questions")]

@@ -54,6 +54,8 @@ public record VikritiSnapshotDto(Guid UserId, decimal VataScore, decimal PittaSc
 
 public record McqResponseDto(Guid UserId, Guid QuestionId, string AnswerValue);
 
+public record HealthIndicatorDto(Guid Id, Guid UserId, string Indication, string Value, bool IsActive);
+
 public record CouponDto(Guid Id, string Code, PlanType PlanType, int MaxRedemptions, int RedeemedCount, DateTime? ExpiryDate, bool IsActive);
 public record CouponRedemptionDto(Guid CouponId, Guid UserId);
 public record UserUsageDto(Guid UserId, DateOnly Date, int ChatsUsed, int ArticlesUsed);

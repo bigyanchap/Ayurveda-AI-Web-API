@@ -3,6 +3,7 @@ using System;
 using Ayurveda_AI_Backend.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260206071344_SimplifyHealthIndicator")]
+    partial class SimplifyHealthIndicator
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -171,6 +174,51 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                     b.ToTable("CouponRedemptions");
                 });
 
+            modelBuilder.Entity("Ayurveda_AI_Backend.Domain.Entities.EnergyLevel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EnergyLevels");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("b1f0f611-9a8d-4d6b-9b1c-9af1c8f10001"),
+                            Description = "Exhausted or drained.",
+                            Name = "Very Low"
+                        },
+                        new
+                        {
+                            Id = new Guid("b1f0f611-9a8d-4d6b-9b1c-9af1c8f10002"),
+                            Description = "Below usual energy.",
+                            Name = "Low"
+                        },
+                        new
+                        {
+                            Id = new Guid("b1f0f611-9a8d-4d6b-9b1c-9af1c8f10003"),
+                            Description = "Stable energy.",
+                            Name = "Moderate"
+                        },
+                        new
+                        {
+                            Id = new Guid("b1f0f611-9a8d-4d6b-9b1c-9af1c8f10004"),
+                            Description = "Energetic and focused.",
+                            Name = "High"
+                        });
+                });
+
             modelBuilder.Entity("Ayurveda_AI_Backend.Domain.Entities.GeminiQuestion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -222,9 +270,6 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CalculatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Indication")
                         .IsRequired()
                         .HasColumnType("text");
@@ -241,9 +286,41 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
                     b.ToTable("HealthIndicators");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("6a6165af-2a69-4c6a-b8d1-4d8f9aa30101"),
+                            Indication = "Digestion",
+                            IsActive = true,
+                            UserId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Value = "Good"
+                        },
+                        new
+                        {
+                            Id = new Guid("6a6165af-2a69-4c6a-b8d1-4d8f9aa30102"),
+                            Indication = "Sleep Quality",
+                            IsActive = true,
+                            UserId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Value = "Good"
+                        },
+                        new
+                        {
+                            Id = new Guid("6a6165af-2a69-4c6a-b8d1-4d8f9aa30103"),
+                            Indication = "Stress",
+                            IsActive = true,
+                            UserId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Value = "Low"
+                        },
+                        new
+                        {
+                            Id = new Guid("6a6165af-2a69-4c6a-b8d1-4d8f9aa30104"),
+                            Indication = "Energy",
+                            IsActive = true,
+                            UserId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Value = "High"
+                        });
                 });
 
             modelBuilder.Entity("Ayurveda_AI_Backend.Domain.Entities.HealthSignal", b =>
@@ -304,6 +381,57 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("McqResponses");
+                });
+
+            modelBuilder.Entity("Ayurveda_AI_Backend.Domain.Entities.PoopType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PoopTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("f2e2c9a1-4d6b-4abf-9c55-3c2d0e2b1b11"),
+                            Description = "Hard lumps, difficult to pass.",
+                            Name = "Type 1"
+                        },
+                        new
+                        {
+                            Id = new Guid("2a0d8b4c-0c6f-4ea1-9f90-4f3c8f4e7b22"),
+                            Description = "Sausage-shaped but lumpy.",
+                            Name = "Type 2"
+                        },
+                        new
+                        {
+                            Id = new Guid("c8f5b8e7-6f5b-4c4a-9b90-8e1a0f7d9c33"),
+                            Description = "Cracked surface, normal.",
+                            Name = "Type 3"
+                        },
+                        new
+                        {
+                            Id = new Guid("0f9b7d5a-0b78-4b44-8d9a-4e2c2c5f6d44"),
+                            Description = "Smooth and soft, ideal.",
+                            Name = "Type 4"
+                        },
+                        new
+                        {
+                            Id = new Guid("a8b9c2d3-3c2d-4f4b-8e7f-2b4c6d8e9f55"),
+                            Description = "Soft blobs, clear-cut.",
+                            Name = "Type 5"
+                        });
                 });
 
             modelBuilder.Entity("Ayurveda_AI_Backend.Domain.Entities.PrakritiQuizResponse", b =>
@@ -611,17 +739,6 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                         .IsRequired();
 
                     b.Navigation("Coupon");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Ayurveda_AI_Backend.Domain.Entities.HealthIndicator", b =>
-                {
-                    b.HasOne("Ayurveda_AI_Backend.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("User");
                 });

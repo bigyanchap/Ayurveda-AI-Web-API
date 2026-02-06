@@ -27,8 +27,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<QuizOption> QuizOptions => Set<QuizOption>();
     public DbSet<McqResponse> McqResponses => Set<McqResponse>();
     public DbSet<HealthIndicator> HealthIndicators => Set<HealthIndicator>();
-    public DbSet<PoopType> PoopTypes => Set<PoopType>();
-    public DbSet<EnergyLevel> EnergyLevels => Set<EnergyLevel>();
     public DbSet<GeminiQuestion> GeminiQuestions => Set<GeminiQuestion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -80,9 +78,6 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(r => r.QuestionId);
 
-        modelBuilder.Entity<PoopType>().HasData(SeedData.PoopTypes);
-        modelBuilder.Entity<EnergyLevel>().HasData(SeedData.EnergyLevels);
-        modelBuilder.Entity<HealthIndicator>().HasData(SeedData.Indicators);
         modelBuilder.Entity<GeminiQuestion>().HasData(SeedData.GeminiQuestions);
     }
 }

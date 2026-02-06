@@ -2,6 +2,7 @@ using Ayurveda_AI_Backend.Domain.Enums;
 
 namespace Ayurveda_AI_Backend.Domain.Entities;
 
+// HealthSignal = "What happened" (time-series data)
 public class HealthSignal
 {
     public Guid Id { get; set; }
@@ -12,6 +13,18 @@ public class HealthSignal
     public DateTime ReportedAt { get; set; } = DateTime.UtcNow;
     public string Source { get; set; } = "user_input";
 
+    public User? User { get; set; }
+}
+
+// HealthIndicator = "How things stand" (current summary)
+public class HealthIndicator
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public string Indication { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+    public DateTime CalculatedAt { get; set; } = DateTime.UtcNow;
     public User? User { get; set; }
 }
 
@@ -52,11 +65,4 @@ public class VikritiSnapshot
     public User? User { get; set; }
 }
 
-public class HealthIndicator
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string Category { get; set; } = string.Empty;
-    public bool IsActive { get; set; } = true;
-}
+

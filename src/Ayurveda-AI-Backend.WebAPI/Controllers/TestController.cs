@@ -17,8 +17,6 @@ public class TestController : ControllerBase
     private readonly IRepository<AccessPolicy> _policyRepository;
     private readonly IRepository<Coupon> _couponRepository;
     private readonly IRepository<HealthIndicator> _indicatorRepository;
-    private readonly IRepository<PoopType> _poopTypeRepository;
-    private readonly IRepository<EnergyLevel> _energyLevelRepository;
     private readonly IRepository<QuizQuestion> _quizRepository;
     private readonly IRepository<GeminiQuestion> _geminiQuestionRepository;
     private readonly IRepository<ChronicCondition> _chronicConditionRepository;
@@ -32,8 +30,6 @@ public class TestController : ControllerBase
         IRepository<AccessPolicy> policyRepository,
         IRepository<Coupon> couponRepository,
         IRepository<HealthIndicator> indicatorRepository,
-        IRepository<PoopType> poopTypeRepository,
-        IRepository<EnergyLevel> energyLevelRepository,
         IRepository<QuizQuestion> quizRepository,
         IRepository<GeminiQuestion> geminiQuestionRepository,
         IRepository<ChronicCondition> chronicConditionRepository,
@@ -46,8 +42,6 @@ public class TestController : ControllerBase
         _policyRepository = policyRepository;
         _couponRepository = couponRepository;
         _indicatorRepository = indicatorRepository;
-        _poopTypeRepository = poopTypeRepository;
-        _energyLevelRepository = energyLevelRepository;
         _quizRepository = quizRepository;
         _geminiQuestionRepository = geminiQuestionRepository;
         _chronicConditionRepository = chronicConditionRepository;
@@ -210,42 +204,17 @@ public class TestController : ControllerBase
             await _couponRepository.AddAsync(coupon);
         }
 
-        var indicator = (await _indicatorRepository.FindAsync(i => i.Name == "Energy")).FirstOrDefault();
+        var indicator = (await _indicatorRepository.FindAsync(i => i.Indication == "Energy")).FirstOrDefault();
         if (indicator == null)
         {
             indicator = new HealthIndicator
             {
                 Id = Guid.NewGuid(),
-                Name = "Energy",
-                Description = "Daily energy level",
-                Category = "General",
+                Indication = "Energy",
+                Value = "High",
                 IsActive = true
             };
             await _indicatorRepository.AddAsync(indicator);
-        }
-
-        var poopType = (await _poopTypeRepository.FindAsync(p => p.Name == "Normal")).FirstOrDefault();
-        if (poopType == null)
-        {
-            poopType = new PoopType
-            {
-                Id = Guid.NewGuid(),
-                Name = "Normal",
-                Description = "Balanced and regular"
-            };
-            await _poopTypeRepository.AddAsync(poopType);
-        }
-
-        var energyLevel = (await _energyLevelRepository.FindAsync(e => e.Name == "High")).FirstOrDefault();
-        if (energyLevel == null)
-        {
-            energyLevel = new EnergyLevel
-            {
-                Id = Guid.NewGuid(),
-                Name = "High",
-                Description = "High energy"
-            };
-            await _energyLevelRepository.AddAsync(energyLevel);
         }
 
         var quizQuestion = (await _quizRepository.FindAsync(q => q.QuestionText == "How do you feel today?"))
@@ -295,8 +264,6 @@ public class TestController : ControllerBase
             policy.Id,
             coupon.Id,
             indicator.Id,
-            poopType.Id,
-            energyLevel.Id,
             quizQuestion.Id,
             geminiQuestion.Id));
     }
@@ -452,8 +419,6 @@ public sealed record TestSeedResponse(
     Guid AccessPolicyId,
     Guid CouponId,
     Guid HealthIndicatorId,
-    Guid PoopTypeId,
-    Guid EnergyLevelId,
     Guid QuizQuestionId,
     Guid GeminiQuestionId);
 

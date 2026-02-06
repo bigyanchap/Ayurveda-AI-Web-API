@@ -18,59 +18,11 @@ public class ArticlesController : ControllerBase
         _geminiService = geminiService;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<ArticleDto>>> GetAll()
-    {
-        var articles = await _articleService.GetAllAsync();
-        return Ok(articles);
-    }
-
-    [HttpGet("{id:guid}")]
-    public async Task<ActionResult<ArticleDto>> GetById(Guid id)
-    {
-        var article = await _articleService.GetByIdAsync(id);
-        if (article == null)
-        {
-            return NotFound();
-        }
-
-        return Ok(article);
-    }
-
-    [HttpPost]
-    [Authorize(Policy = "AdminOnly")]
-    public async Task<ActionResult<ArticleDto>> Create([FromBody] CreateArticleDto dto)
-    {
-        var article = await _articleService.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = article.Id }, article);
-    }
-
-    [HttpPut("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
-    public async Task<ActionResult<ArticleDto>> Update(Guid id, [FromBody] UpdateArticleDto dto)
-    {
-        var article = await _articleService.UpdateAsync(id, dto);
-        if (article == null)
-        {
-            return NotFound();
-        }
-
-        return Ok(article);
-    }
-
-    [HttpDelete("{id:guid}")]
-    [Authorize(Policy = "AdminOnly")]
-    public async Task<IActionResult> Delete(Guid id)
-    {
-        var deleted = await _articleService.DeleteAsync(id);
-        return deleted ? NoContent() : NotFound();
-    }
-
-    [HttpPost("generate")]
+    [HttpGet("generate/{userId:guid}")]
     [Authorize]
-    public async Task<ActionResult<GenerateArticlesResponseDto>> Generate([FromBody] GenerateArticlesRequestDto request)
+    public async Task<ActionResult<GenerateArticlesResponseDto>> GenerateArticles(Guid userId)
     {
-        var response = await _geminiService.GenerateArticlesAsync(request);
-        return Ok(response);
+        var articles = await _geminiService.GenerateArticlesAsync(new GenerateArticlesRequestDto(userId, "Morning", "Clear", null));
+        return Ok(articles);
     }
 }

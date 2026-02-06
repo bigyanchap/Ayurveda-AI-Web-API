@@ -9,6 +9,7 @@ namespace Ayurveda_AI_Backend.Service.Services;
 public class HealthService : IHealthService
 {
     private readonly IRepository<HealthSignal> _signalRepository;
+    private readonly IRepository<HealthIndicator> _indicatorRepository;
     private readonly IRepository<VikritiSnapshot> _vikritiRepository;
     private readonly IRepository<PrakritiResult> _prakritiRepository;
     private readonly IRepository<PrakritiQuizResponse> _prakritiResponseRepository;
@@ -17,6 +18,7 @@ public class HealthService : IHealthService
 
     public HealthService(
         IRepository<HealthSignal> signalRepository,
+        IRepository<HealthIndicator> indicatorRepository,
         IRepository<VikritiSnapshot> vikritiRepository,
         IRepository<PrakritiResult> prakritiRepository,
         IRepository<PrakritiQuizResponse> prakritiResponseRepository,
@@ -24,6 +26,7 @@ public class HealthService : IHealthService
         ILogger<HealthService> logger)
     {
         _signalRepository = signalRepository;
+        _indicatorRepository = indicatorRepository;
         _vikritiRepository = vikritiRepository;
         _prakritiRepository = prakritiRepository;
         _prakritiResponseRepository = prakritiResponseRepository;
@@ -53,6 +56,18 @@ public class HealthService : IHealthService
     {
         var signals = await _signalRepository.FindAsync(s => s.UserId == userId);
         return signals.Select(MapToDto).ToList();
+    }
+
+    public async Task<IReadOnlyList<HealthIndicatorDto>> GetIndicatorsAsync(Guid userId)
+    {
+        var indicators = await _indicatorRepository.FindAsync(i => i.IsActive && i.UserId == userId);
+        _logger.LogInformation("Retrieved {Count} health indicators for user {UserId}", indicators.Count, userId);
+        return indicators.Select(i => new HealthIndicatorDto(
+            i.Id,
+            i.UserId,
+            i.Indication,
+            i.Value,
+            i.IsActive)).ToList();
     }
 
     public async Task<VikritiSnapshotDto> SaveVikritiSnapshotAsync(VikritiSnapshotDto dto)
@@ -89,6 +104,25 @@ public class HealthService : IHealthService
         await _prakritiRepository.AddAsync(result);
         _logger.LogInformation("Prakriti result saved for user {UserId}", dto.UserId);
         return dto;
+    }
+
+    public async Task<PrakritiResultDto?> GetPrakritiResultAsync(Guid userId)
+    {
+        var result = (await _prakritiRepository.FindAsync(p => p.UserId == userId && p.IsActive))
+            .OrderByDescending(p => p.CalculatedAt)
+            .FirstOrDefault();
+
+        if (result == null)
+        {
+            return null;
+        }
+
+        return new PrakritiResultDto(
+            result.UserId,
+            result.VataPercent,
+            result.PittaPercent,
+            result.KaphaPercent,
+            result.PrakritiLabel);
     }
 
     public async Task LogPrakritiResponseAsync(PrakritiQuizResponseDto dto)
