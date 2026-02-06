@@ -14,6 +14,14 @@ namespace Ayurveda_AI_Backend.WebAPI.Controllers;
 public class TestController : ControllerBase
 {
     private readonly IRepository<User> _userRepository;
+    private readonly IRepository<AccessPolicy> _policyRepository;
+    private readonly IRepository<Coupon> _couponRepository;
+    private readonly IRepository<HealthIndicator> _indicatorRepository;
+    private readonly IRepository<PoopType> _poopTypeRepository;
+    private readonly IRepository<EnergyLevel> _energyLevelRepository;
+    private readonly IRepository<QuizQuestion> _quizRepository;
+    private readonly IRepository<GeminiQuestion> _geminiQuestionRepository;
+    private readonly IRepository<ChronicCondition> _chronicConditionRepository;
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<TestController> _logger;
     private readonly ISupabaseClientProvider _supabaseClientProvider;
@@ -21,12 +29,28 @@ public class TestController : ControllerBase
 
     public TestController(
         IRepository<User> userRepository,
+        IRepository<AccessPolicy> policyRepository,
+        IRepository<Coupon> couponRepository,
+        IRepository<HealthIndicator> indicatorRepository,
+        IRepository<PoopType> poopTypeRepository,
+        IRepository<EnergyLevel> energyLevelRepository,
+        IRepository<QuizQuestion> quizRepository,
+        IRepository<GeminiQuestion> geminiQuestionRepository,
+        IRepository<ChronicCondition> chronicConditionRepository,
         IWebHostEnvironment environment,
         ILogger<TestController> logger,
         ISupabaseClientProvider supabaseClientProvider,
         IOptions<SupabaseOptions> supabaseOptions)
     {
         _userRepository = userRepository;
+        _policyRepository = policyRepository;
+        _couponRepository = couponRepository;
+        _indicatorRepository = indicatorRepository;
+        _poopTypeRepository = poopTypeRepository;
+        _energyLevelRepository = energyLevelRepository;
+        _quizRepository = quizRepository;
+        _geminiQuestionRepository = geminiQuestionRepository;
+        _chronicConditionRepository = chronicConditionRepository;
         _environment = environment;
         _logger = logger;
         _supabaseClientProvider = supabaseClientProvider;
@@ -147,6 +171,244 @@ public class TestController : ControllerBase
         return Created($"/api/users/{user.Id}/profile", new TestUserResponse(user.Id, user.Email, true, supabaseUserId));
     }
 
+    [HttpPost("seed")]
+    [AllowAnonymous]
+    public async Task<ActionResult<TestSeedResponse>> SeedTestData()
+    {
+        if (!_environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        var policy = (await _policyRepository.FindAsync(p => p.PolicyType == PolicyType.Free)).FirstOrDefault();
+        if (policy == null)
+        {
+            policy = new AccessPolicy
+            {
+                Id = Guid.NewGuid(),
+                PolicyType = PolicyType.Free,
+                MaxChatsPerDay = 5,
+                MaxArticlesPerDay = 5,
+                IsActive = true
+            };
+            await _policyRepository.AddAsync(policy);
+        }
+
+        var coupon = (await _couponRepository.FindAsync(c => c.Code == "TEST10")).FirstOrDefault();
+        if (coupon == null)
+        {
+            coupon = new Coupon
+            {
+                Id = Guid.NewGuid(),
+                Code = "TEST10",
+                PlanType = PlanType.Trial,
+                MaxRedemptions = 10,
+                RedeemedCount = 0,
+                ExpiryDate = DateTime.UtcNow.AddDays(30),
+                IsActive = true
+            };
+            await _couponRepository.AddAsync(coupon);
+        }
+
+        var indicator = (await _indicatorRepository.FindAsync(i => i.Name == "Energy")).FirstOrDefault();
+        if (indicator == null)
+        {
+            indicator = new HealthIndicator
+            {
+                Id = Guid.NewGuid(),
+                Name = "Energy",
+                Description = "Daily energy level",
+                Category = "General",
+                IsActive = true
+            };
+            await _indicatorRepository.AddAsync(indicator);
+        }
+
+        var poopType = (await _poopTypeRepository.FindAsync(p => p.Name == "Normal")).FirstOrDefault();
+        if (poopType == null)
+        {
+            poopType = new PoopType
+            {
+                Id = Guid.NewGuid(),
+                Name = "Normal",
+                Description = "Balanced and regular"
+            };
+            await _poopTypeRepository.AddAsync(poopType);
+        }
+
+        var energyLevel = (await _energyLevelRepository.FindAsync(e => e.Name == "High")).FirstOrDefault();
+        if (energyLevel == null)
+        {
+            energyLevel = new EnergyLevel
+            {
+                Id = Guid.NewGuid(),
+                Name = "High",
+                Description = "High energy"
+            };
+            await _energyLevelRepository.AddAsync(energyLevel);
+        }
+
+        var quizQuestion = (await _quizRepository.FindAsync(q => q.QuestionText == "How do you feel today?"))
+            .FirstOrDefault();
+        if (quizQuestion == null)
+        {
+            quizQuestion = new QuizQuestion
+            {
+                Id = Guid.NewGuid(),
+                Category = "General",
+                QuestionText = "How do you feel today?",
+                IsActive = true,
+                Options = new List<QuizOption>
+                {
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        OptionText = "Great",
+                        OptionValue = "great"
+                    },
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        OptionText = "Okay",
+                        OptionValue = "okay"
+                    }
+                }
+            };
+            await _quizRepository.AddAsync(quizQuestion);
+        }
+
+        var geminiQuestion = (await _geminiQuestionRepository.FindAsync(q => q.QuestionText == "What is your focus?"))
+            .FirstOrDefault();
+        if (geminiQuestion == null)
+        {
+            geminiQuestion = new GeminiQuestion
+            {
+                Id = Guid.NewGuid(),
+                QuestionText = "What is your focus?",
+                Category = "General",
+                IsActive = true
+            };
+            await _geminiQuestionRepository.AddAsync(geminiQuestion);
+        }
+
+        return Ok(new TestSeedResponse(
+            policy.Id,
+            coupon.Id,
+            indicator.Id,
+            poopType.Id,
+            energyLevel.Id,
+            quizQuestion.Id,
+            geminiQuestion.Id));
+    }
+
+    [HttpPost("chronic-conditions")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ChronicConditionDto>> CreateChronicCondition([FromBody] CreateChronicConditionRequest request)
+    {
+        if (!_environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        var condition = new ChronicCondition
+        {
+            Id = Guid.NewGuid(),
+            UserId = request.UserId,
+            ConditionType = request.ConditionType.Trim(),
+            Severity = request.Severity.Trim(),
+            DiagnosedAt = request.DiagnosedAt,
+            IsActive = true
+        };
+
+        await _chronicConditionRepository.AddAsync(condition);
+        return Created($"/api/test/chronic-conditions/{condition.Id}", MapCondition(condition));
+    }
+
+    [HttpGet("chronic-conditions")]
+    [AllowAnonymous]
+    public async Task<ActionResult<IReadOnlyList<ChronicConditionDto>>> ListChronicConditions([FromQuery] Guid userId)
+    {
+        if (!_environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        var conditions = await _chronicConditionRepository.FindAsync(c => c.UserId == userId);
+        return Ok(conditions.Select(MapCondition).ToList());
+    }
+
+    [HttpGet("chronic-conditions/{id:guid}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ChronicConditionDto>> GetChronicCondition(Guid id)
+    {
+        if (!_environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        var condition = await _chronicConditionRepository.GetByIdAsync(id);
+        if (condition == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(MapCondition(condition));
+    }
+
+    [HttpPut("chronic-conditions/{id:guid}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ChronicConditionDto>> UpdateChronicCondition(Guid id, [FromBody] UpdateChronicConditionRequest request)
+    {
+        if (!_environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        var condition = await _chronicConditionRepository.GetByIdAsync(id);
+        if (condition == null)
+        {
+            return NotFound();
+        }
+
+        condition.ConditionType = request.ConditionType.Trim();
+        condition.Severity = request.Severity.Trim();
+        condition.DiagnosedAt = request.DiagnosedAt;
+        condition.IsActive = request.IsActive;
+
+        await _chronicConditionRepository.UpdateAsync(condition);
+        return Ok(MapCondition(condition));
+    }
+
+    [HttpDelete("chronic-conditions/{id:guid}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> DeleteChronicCondition(Guid id)
+    {
+        if (!_environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        var condition = await _chronicConditionRepository.GetByIdAsync(id);
+        if (condition == null)
+        {
+            return NotFound();
+        }
+
+        await _chronicConditionRepository.DeleteAsync(condition);
+        return NoContent();
+    }
+
+    private static ChronicConditionDto MapCondition(ChronicCondition condition)
+    {
+        return new ChronicConditionDto(
+            condition.Id,
+            condition.UserId,
+            condition.ConditionType,
+            condition.Severity,
+            condition.DiagnosedAt,
+            condition.IsActive);
+    }
+
     private static string? ExtractUserId(dynamic? result)
     {
         if (result == null)
@@ -185,3 +447,32 @@ public class TestController : ControllerBase
 public sealed record CreateTestUserRequest(string Email, string? Password, string? AuthProviderUserId);
 
 public sealed record TestUserResponse(Guid Id, string Email, bool Created, string? SupabaseUserId);
+
+public sealed record TestSeedResponse(
+    Guid AccessPolicyId,
+    Guid CouponId,
+    Guid HealthIndicatorId,
+    Guid PoopTypeId,
+    Guid EnergyLevelId,
+    Guid QuizQuestionId,
+    Guid GeminiQuestionId);
+
+public sealed record CreateChronicConditionRequest(
+    Guid UserId,
+    string ConditionType,
+    string Severity,
+    DateTime? DiagnosedAt);
+
+public sealed record UpdateChronicConditionRequest(
+    string ConditionType,
+    string Severity,
+    DateTime? DiagnosedAt,
+    bool IsActive);
+
+public sealed record ChronicConditionDto(
+    Guid Id,
+    Guid UserId,
+    string ConditionType,
+    string Severity,
+    DateTime? DiagnosedAt,
+    bool IsActive);
