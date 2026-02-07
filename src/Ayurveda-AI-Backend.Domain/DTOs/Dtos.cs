@@ -72,3 +72,12 @@ public record GenerateArticlesResponseDto(string ArticlesJson, DateTime Generate
 public record QuizQuestionDto(Guid Id, string Category, string QuestionText, QuestionType QuestionType, bool IsActive);
 public record CreateQuizQuestionDto(string Category, string QuestionText, QuestionType QuestionType);
 public record UpdateQuizQuestionDto(string Category, string QuestionText, QuestionType QuestionType, bool IsActive);
+
+// Auth DTOs
+public record SignUpRequestDto(string Email, string Password);
+public record LoginRequestDto(string Email, string Password);
+public record VerifyOtpRequestDto(string Email, string OtpCode);
+public record ResendOtpRequestDto(string Email);
+public record RefreshTokenRequestDto(string RefreshToken);
+public record AuthResponseDto(string AccessToken, string RefreshToken, string UserId, string Email, long ExpiresIn);
+public record AuthMessageDto(string Message);

@@ -174,6 +174,24 @@ public class TestController : ControllerBase
             return NotFound();
         }
 
+        // Ensure a dev user exists for Angular mock auth testing
+        var devUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var devUser = await _userRepository.GetByIdAsync(devUserId);
+        if (devUser == null)
+        {
+            devUser = new User
+            {
+                Id = devUserId,
+                Email = "dev@ayurveda-ai.com",
+                AuthProvider = AuthProvider.Email,
+                AuthProviderUserId = devUserId.ToString(),
+                IsEmailVerified = true,
+                IsActive = true
+            };
+            await _userRepository.AddAsync(devUser);
+            _logger.LogInformation("Created dev test user {UserId}", devUserId);
+        }
+
         var policy = (await _policyRepository.FindAsync(p => p.PolicyType == PolicyType.Free)).FirstOrDefault();
         if (policy == null)
         {
@@ -204,12 +222,13 @@ public class TestController : ControllerBase
             await _couponRepository.AddAsync(coupon);
         }
 
-        var indicator = (await _indicatorRepository.FindAsync(i => i.Indication == "Energy")).FirstOrDefault();
+        var indicator = (await _indicatorRepository.FindAsync(i => i.Indication == "Energy" && i.UserId == devUserId)).FirstOrDefault();
         if (indicator == null)
         {
             indicator = new HealthIndicator
             {
                 Id = Guid.NewGuid(),
+                UserId = devUserId,
                 Indication = "Energy",
                 Value = "High",
                 IsActive = true

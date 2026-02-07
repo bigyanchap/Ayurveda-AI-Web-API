@@ -67,7 +67,8 @@ public class HealthService : IHealthService
             i.UserId,
             i.Indication,
             i.Value,
-            i.IsActive)).ToList();
+            i.IsActive,
+            i.CalculatedAt)).ToList();
     }
 
     public async Task<VikritiSnapshotDto> SaveVikritiSnapshotAsync(VikritiSnapshotDto dto)

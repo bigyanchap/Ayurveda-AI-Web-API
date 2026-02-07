@@ -4,6 +4,7 @@ using Serilog;
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .Enrich.FromLogContext()
+    .WriteTo.Console()
     .WriteTo.File(
         path: "Logs/log-.txt",
         rollingInterval: RollingInterval.Day,
