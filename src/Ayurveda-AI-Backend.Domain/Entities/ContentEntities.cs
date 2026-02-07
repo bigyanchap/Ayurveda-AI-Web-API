@@ -19,6 +19,7 @@ public class QuizQuestion
     public Guid Id { get; set; }
     public string Category { get; set; } = string.Empty;
     public string QuestionText { get; set; } = string.Empty;
+    public QuestionType QuestionType { get; set; } = QuestionType.Prakriti;
     public bool IsActive { get; set; } = true;
 
     public ICollection<QuizOption> Options { get; set; } = new List<QuizOption>();

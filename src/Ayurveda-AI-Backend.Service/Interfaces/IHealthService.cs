@@ -10,6 +10,5 @@ public interface IHealthService
     Task<VikritiSnapshotDto> SaveVikritiSnapshotAsync(VikritiSnapshotDto dto);
     Task<PrakritiResultDto> SavePrakritiResultAsync(PrakritiResultDto dto);
     Task<PrakritiResultDto?> GetPrakritiResultAsync(Guid userId);
-    Task LogPrakritiResponseAsync(PrakritiQuizResponseDto dto);
-    Task LogMcqResponseAsync(McqResponseDto dto);
+    Task<IReadOnlyList<HealthIndicatorDto>> SaveIndicatorsAsync(IReadOnlyList<HealthIndicatorDto> dto);
 }

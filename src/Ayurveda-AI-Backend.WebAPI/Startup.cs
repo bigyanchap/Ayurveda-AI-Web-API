@@ -31,6 +31,7 @@ public class Startup
         services.AddScoped<IArticleService, ArticleService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IHealthService, HealthService>();
+        services.AddScoped<IQuizQuestionService, QuizQuestionService>();
         services.AddHttpClient<IGeminiService, GeminiService>();
 
         services.Configure<GeminiOptions>(_configuration.GetSection("Gemini"));

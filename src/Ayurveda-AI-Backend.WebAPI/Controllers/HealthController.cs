@@ -58,42 +58,39 @@ public class HealthController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("get-prakriti-result/{userId:guid}")]
+    [HttpGet("get-health-result/{userId:guid}")]
     [Authorize]
     public async Task<ActionResult<PrakritiResultDto>> GetPrakritiResult(Guid userId)
     {
-        var result = await _healthService.GetPrakritiResultAsync(userId);
-        if (result == null)
+        var result1 = await _healthService.GetPrakritiResultAsync(userId);
+        var result2 = await _healthService.GetIndicatorsAsync(userId);
+        if (result1 == null && result2 == null)
         {
             return NotFound();
         }
 
-        return Ok(result);
+        return Ok(new {
+            PrakritiResult = result1,
+            Indicators = result2
+        });
     }
 
-    [HttpPost("prakriti")]
+    [HttpPost("post-prakriti")]
     [Authorize]
     public async Task<ActionResult<PrakritiResultDto>> SavePrakriti([FromBody] PrakritiResultDto dto)
     {
         var result = await _healthService.SavePrakritiResultAsync(dto);
         return Ok(result);
     }
-
-    [HttpPost("prakriti/response")]
+    [HttpPost("post-indicators")]
     [Authorize]
-    public async Task<IActionResult> LogPrakritiResponse([FromBody] PrakritiQuizResponseDto dto)
+    public async Task<ActionResult<IReadOnlyList<HealthIndicatorDto>>> SaveIndicators([FromBody] IReadOnlyList<HealthIndicatorDto> dto)
     {
-        await _healthService.LogPrakritiResponseAsync(dto);
-        return Ok();
+        var result = await _healthService.SaveIndicatorsAsync(dto);
+        return Ok(result);
     }
+    
 
-    [HttpPost("mcq")]
-    [Authorize]
-    public async Task<IActionResult> LogMcqResponse([FromBody] McqResponseDto dto)
-    {
-        await _healthService.LogMcqResponseAsync(dto);
-        return Ok();
-    }
 
     [HttpGet("get-indicators/{userId:guid}")]
     [Authorize]

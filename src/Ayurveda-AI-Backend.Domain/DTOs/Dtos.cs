@@ -54,7 +54,7 @@ public record VikritiSnapshotDto(Guid UserId, decimal VataScore, decimal PittaSc
 
 public record McqResponseDto(Guid UserId, Guid QuestionId, string AnswerValue);
 
-public record HealthIndicatorDto(Guid Id, Guid UserId, string Indication, string Value, bool IsActive);
+public record HealthIndicatorDto(Guid Id, Guid UserId, string Indication, string Value, bool IsActive, DateTime CalculatedAt);
 
 public record CouponDto(Guid Id, string Code, PlanType PlanType, int MaxRedemptions, int RedeemedCount, DateTime? ExpiryDate, bool IsActive);
 public record CouponRedemptionDto(Guid CouponId, Guid UserId);
@@ -68,3 +68,7 @@ public record GenerateArticlesRequestDto(
     string? Location);
 
 public record GenerateArticlesResponseDto(string ArticlesJson, DateTime GeneratedAt);
+
+public record QuizQuestionDto(Guid Id, string Category, string QuestionText, QuestionType QuestionType, bool IsActive);
+public record CreateQuizQuestionDto(string Category, string QuestionText, QuestionType QuestionType);
+public record UpdateQuizQuestionDto(string Category, string QuestionText, QuestionType QuestionType, bool IsActive);

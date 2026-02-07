@@ -4,8 +4,6 @@ Article(Id:Guid,Title:String,Summary:String,Content:String,Tags:String,Status:Ar
 QuizQuestion(Id:Guid,Category:String,QuestionText:String,IsActive:Bool,Options:ICollection<QuizOption>)
 QuizOption(Id:Guid,QuestionId:Guid,OptionText:String,OptionValue:String,Question:QuizQuestion?)
 McqResponse(Id:Guid,UserId:Guid,QuestionId:Guid,AnswerValue:String,AnsweredAt:DateTime,User:User?,Question:QuizQuestion?)
-PoopType(Id:Guid,Name:String,Description:String)
-EnergyLevel(Id:Guid,Name:String,Description:String)
 GeminiQuestion(Id:Guid,QuestionText:String,Category:String,IsActive:Bool)
 
 User(Id:Guid,Email:String,Phone:String?,AuthProvider:AuthProvider,AuthProviderUserId:String,IsEmailVerified:Bool,IsActive:Bool,CreatedAt:DateTime,LastSignInAt:DateTime?,Profile:UserProfile?,PrakritiQuizResponses:ICollection<PrakritiQuizResponse>,PrakritiResults:ICollection<PrakritiResult>,HealthSignals:ICollection<HealthSignal>,ChronicConditions:ICollection<ChronicCondition>,LifestyleProfiles:ICollection<UserLifestyleProfile>,VikritiSnapshots:ICollection<VikritiSnapshot>,CouponRedemptions:ICollection<CouponRedemption>,UserUsages:ICollection<UserUsage>,McqResponses:ICollection<McqResponse>)

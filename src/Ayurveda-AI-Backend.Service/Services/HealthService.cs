@@ -106,6 +106,49 @@ public class HealthService : IHealthService
         return dto;
     }
 
+    // We never delete or update the indicators, we only set IsActive to false and create new ones. 
+    // The Fundamental idea is to never delete Health data, we only set IsActive to false and create new ones.
+    public async Task<IReadOnlyList<HealthIndicatorDto>> SaveIndicatorsAsync(IReadOnlyList<HealthIndicatorDto> healthIndicators)
+    {
+        if (healthIndicators.Count == 0)
+            return [];
+
+        var userId = healthIndicators[0].UserId;
+
+        // Deactivate ALL active indicators for this user
+        var oldIndicators = await _indicatorRepository.FindAsync(i => i.UserId == userId && i.IsActive);
+        foreach (var old in oldIndicators)
+        {
+            old.IsActive = false;
+            await _indicatorRepository.UpdateAsync(old);
+        }
+
+        // Save new indicators and set IsActive to true.
+        // If any indicator value is empty, carry over from the old active set.
+        var newIndicators = healthIndicators.Select(indicator =>
+        {
+            var value = string.IsNullOrEmpty(indicator.Value)
+                ? oldIndicators.FirstOrDefault(o => o.Indication == indicator.Indication)?.Value ?? string.Empty
+                : indicator.Value;
+
+            return new HealthIndicator
+            {
+                Id = Guid.NewGuid(),
+                UserId = indicator.UserId,
+                Indication = indicator.Indication,
+                Value = value,
+                IsActive = true,
+                CalculatedAt = DateTime.UtcNow
+            };
+        }).ToList();
+
+        await _indicatorRepository.AddRangeAsync(newIndicators);
+
+        _logger.LogInformation("Indicators saved for user {UserId}", userId);
+
+        return await GetIndicatorsAsync(userId);
+    }
+
     public async Task<PrakritiResultDto?> GetPrakritiResultAsync(Guid userId)
     {
         var result = (await _prakritiRepository.FindAsync(p => p.UserId == userId && p.IsActive))
