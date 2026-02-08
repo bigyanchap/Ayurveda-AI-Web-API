@@ -18,11 +18,12 @@ public class ArticlesController : ControllerBase
         _geminiService = geminiService;
     }
 
-    [HttpGet("generate/{userId:guid}")]
+    [HttpPost("generate")]
     [Authorize]
-    public async Task<ActionResult<GenerateArticlesResponseDto>> GenerateArticles(Guid userId)
+    public async Task<ActionResult<GenerateArticlesResponseDto>> GenerateArticles(
+        [FromBody] GenerateArticlesRequestDto request)
     {
-        var articles = await _geminiService.GenerateArticlesAsync(new GenerateArticlesRequestDto(userId, "Morning", "Clear", null));
+        var articles = await _geminiService.GenerateArticlesAsync(request);
         return Ok(articles);
     }
 }

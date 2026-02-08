@@ -20,7 +20,16 @@ public class ChatController : ControllerBase
     [Authorize]
     public async Task<ActionResult<ChatResponseDto>> Chat([FromBody] ChatRequestDto request)
     {
-        var response = await _geminiService.GetChatResponseAsync(request);
-        return Ok(response);
+        try
+        {
+            var response = await _geminiService.GetChatResponseAsync(request);
+            return Ok(response);
+        }
+        catch (Exception)
+        {
+            return Ok(new ChatResponseDto(
+                "I'm having trouble generating a response right now. Please try again in a moment.",
+                DateTime.UtcNow));
+        }
     }
 }

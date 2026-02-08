@@ -15,10 +15,7 @@ public class GeminiService : IGeminiService
     private readonly GeminiOptions _options;
     private readonly IRepository<UserProfile> _profileRepository;
     private readonly IRepository<PrakritiResult> _prakritiRepository;
-    private readonly IRepository<VikritiSnapshot> _vikritiRepository;
-    private readonly IRepository<HealthSignal> _signalRepository;
-    private readonly IRepository<ChronicCondition> _conditionRepository;
-    private readonly IRepository<UserLifestyleProfile> _lifestyleRepository;
+    private readonly IRepository<HealthIndicator> _indicatorRepository;
     private readonly ILogger<GeminiService> _logger;
 
     public GeminiService(
@@ -26,64 +23,84 @@ public class GeminiService : IGeminiService
         IOptions<GeminiOptions> options,
         IRepository<UserProfile> profileRepository,
         IRepository<PrakritiResult> prakritiRepository,
-        IRepository<VikritiSnapshot> vikritiRepository,
-        IRepository<HealthSignal> signalRepository,
-        IRepository<ChronicCondition> conditionRepository,
-        IRepository<UserLifestyleProfile> lifestyleRepository,
+        IRepository<HealthIndicator> indicatorRepository,
         ILogger<GeminiService> logger)
     {
         _httpClient = httpClient;
         _options = options.Value;
         _profileRepository = profileRepository;
         _prakritiRepository = prakritiRepository;
-        _vikritiRepository = vikritiRepository;
-        _signalRepository = signalRepository;
-        _conditionRepository = conditionRepository;
-        _lifestyleRepository = lifestyleRepository;
+        _indicatorRepository = indicatorRepository;
         _logger = logger;
     }
 
     public async Task<ChatResponseDto> GetChatResponseAsync(ChatRequestDto request)
     {
-        var profile = (await _profileRepository.FindAsync(p => p.UserId == request.UserId)).FirstOrDefault();
-        var prakriti = (await _prakritiRepository.FindAsync(p => p.UserId == request.UserId && p.IsActive))
-            .OrderByDescending(p => p.CalculatedAt)
-            .FirstOrDefault();
-        var vikriti = (await _vikritiRepository.FindAsync(v => v.UserId == request.UserId))
-            .OrderByDescending(v => v.CalculatedAt)
-            .FirstOrDefault();
-        var recentSignals = (await _signalRepository.FindAsync(s => s.UserId == request.UserId))
-            .OrderByDescending(s => s.ReportedAt)
-            .Take(5)
-            .ToList();
+        var (profile, prakriti, indicators) = await LoadUserHealthData(request.UserId);
 
-        var prompt = GeminiPromptBuilder.BuildChatPrompt(profile, prakriti, vikriti, recentSignals, request.Message);
+        var timeOfDay = string.IsNullOrWhiteSpace(request.TimeOfDay)
+            ? DeriveTimeOfDay()
+            : request.TimeOfDay;
+        var weather = request.Weather ?? "Unknown";
+        var location = request.Location ?? profile?.Country ?? "Unknown";
+
+        var prompt = GeminiPromptBuilder.BuildChatPrompt(
+            profile, prakriti, indicators, timeOfDay, weather, location, request.Message);
+
         _logger.LogInformation("Generating chat response for user {UserId}", request.UserId);
         var responseText = await CallGeminiAsync(prompt);
-
         return new ChatResponseDto(responseText, DateTime.UtcNow);
     }
 
     public async Task<GenerateArticlesResponseDto> GenerateArticlesAsync(GenerateArticlesRequestDto request)
     {
-        var profile = (await _profileRepository.FindAsync(p => p.UserId == request.UserId)).FirstOrDefault();
-        var prakriti = (await _prakritiRepository.FindAsync(p => p.UserId == request.UserId && p.IsActive))
-            .OrderByDescending(p => p.CalculatedAt)
-            .FirstOrDefault();
-        var vikriti = (await _vikritiRepository.FindAsync(v => v.UserId == request.UserId))
-            .OrderByDescending(v => v.CalculatedAt)
-            .FirstOrDefault();
-        var signals = await _signalRepository.FindAsync(s => s.UserId == request.UserId);
-        var conditions = await _conditionRepository.FindAsync(c => c.UserId == request.UserId && c.IsActive);
-        var lifestyle = (await _lifestyleRepository.FindAsync(l => l.UserId == request.UserId))
-            .OrderByDescending(l => l.Id)
-            .FirstOrDefault();
+        var (profile, prakriti, indicators) = await LoadUserHealthData(request.UserId);
 
-        var prompt = GeminiPromptBuilder.BuildArticlePrompt(profile, prakriti, vikriti, signals, conditions, lifestyle, request);
+        var timeOfDay = string.IsNullOrWhiteSpace(request.TimeOfDay)
+            ? DeriveTimeOfDay()
+            : request.TimeOfDay;
+        var weather = string.IsNullOrWhiteSpace(request.Weather)
+            ? "Unknown"
+            : request.Weather;
+        var location = string.IsNullOrWhiteSpace(request.Location)
+            ? profile?.Country ?? "Unknown"
+            : request.Location;
+
+        var prompt = GeminiPromptBuilder.BuildArticlePrompt(
+            profile, prakriti, indicators, timeOfDay, weather, location);
+
         _logger.LogInformation("Generating articles for user {UserId}", request.UserId);
         var responseText = await CallGeminiAsync(prompt);
-
         return new GenerateArticlesResponseDto(responseText, DateTime.UtcNow);
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────
+
+    private async Task<(UserProfile?, PrakritiResult?, IReadOnlyList<HealthIndicator>)>
+        LoadUserHealthData(Guid userId)
+    {
+        var profile = (await _profileRepository.FindAsync(p => p.UserId == userId)).FirstOrDefault();
+
+        var prakriti = (await _prakritiRepository.FindAsync(p => p.UserId == userId && p.IsActive))
+            .OrderByDescending(p => p.CalculatedAt)
+            .FirstOrDefault();
+
+        var indicators = (await _indicatorRepository.FindAsync(i => i.UserId == userId && i.IsActive))
+            .ToList();
+
+        return (profile, prakriti, indicators);
+    }
+
+    private static string DeriveTimeOfDay()
+    {
+        return DateTime.Now.Hour switch
+        {
+            < 6 => "Early Morning",
+            < 12 => "Morning",
+            < 17 => "Afternoon",
+            < 21 => "Evening",
+            _ => "Night"
+        };
     }
 
     private async Task<string> CallGeminiAsync(string prompt)
@@ -104,26 +121,53 @@ public class GeminiService : IGeminiService
             }
         };
 
-        using var response = await _httpClient.PostAsJsonAsync(url, payload);
-        response.EnsureSuccessStatusCode();
-
-        using var responseStream = await response.Content.ReadAsStreamAsync();
-        using var document = await JsonDocument.ParseAsync(responseStream);
-        var text = document
-            .RootElement
-            .GetProperty("candidates")[0]
-            .GetProperty("content")
-            .GetProperty("parts")[0]
-            .GetProperty("text")
-            .GetString();
-
-        if (string.IsNullOrWhiteSpace(text))
+        HttpResponseMessage response;
+        try
         {
-            _logger.LogWarning("Gemini returned empty response");
+            response = await _httpClient.PostAsJsonAsync(url, payload);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to reach Gemini API");
+            return "I'm having trouble connecting to my AI service right now. Please try again in a moment.";
         }
 
-        return string.IsNullOrWhiteSpace(text)
-            ? "I could not generate a response right now. Please try again."
-            : text;
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync();
+            _logger.LogError("Gemini API returned {StatusCode}: {Body}", (int)response.StatusCode, errorBody);
+            response.Dispose();
+            return "I could not generate a response right now. Please try again.";
+        }
+
+        try
+        {
+            using (response)
+            {
+                using var responseStream = await response.Content.ReadAsStreamAsync();
+                using var document = await JsonDocument.ParseAsync(responseStream);
+                var text = document
+                    .RootElement
+                    .GetProperty("candidates")[0]
+                    .GetProperty("content")
+                    .GetProperty("parts")[0]
+                    .GetProperty("text")
+                    .GetString();
+
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    _logger.LogWarning("Gemini returned empty response");
+                }
+
+                return string.IsNullOrWhiteSpace(text)
+                    ? "I could not generate a response right now. Please try again."
+                    : text;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to parse Gemini response");
+            return "I could not generate a response right now. Please try again.";
+        }
     }
 }
