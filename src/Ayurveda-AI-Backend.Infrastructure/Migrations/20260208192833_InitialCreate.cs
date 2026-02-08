@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
+namespace Ayurveda_AI_Backend.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -65,19 +65,6 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "EnergyLevels",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_EnergyLevels", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "GeminiQuestions",
                 columns: table => new
                 {
@@ -92,40 +79,13 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "HealthIndicators",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
-                    Category = table.Column<string>(type: "text", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_HealthIndicators", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PoopTypes",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PoopTypes", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "QuizQuestions",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Category = table.Column<string>(type: "text", nullable: false),
                     QuestionText = table.Column<string>(type: "text", nullable: false),
+                    QuestionType = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -214,6 +174,28 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_CouponRedemptions_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "HealthIndicators",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Indication = table.Column<string>(type: "text", nullable: false),
+                    Value = table.Column<string>(type: "text", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CalculatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HealthIndicators", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_HealthIndicators_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -351,6 +333,9 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                     LastName = table.Column<string>(type: "text", nullable: false),
                     Gender = table.Column<int>(type: "integer", nullable: false),
                     DateOfBirth = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    WeightLbs = table.Column<decimal>(type: "numeric", nullable: true),
+                    HeightFeet = table.Column<int>(type: "integer", nullable: true),
+                    HeightInches = table.Column<int>(type: "integer", nullable: true),
                     Country = table.Column<string>(type: "text", nullable: true),
                     Timezone = table.Column<string>(type: "text", nullable: true),
                     PreferredLanguage = table.Column<string>(type: "text", nullable: true)
@@ -412,17 +397,6 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "EnergyLevels",
-                columns: new[] { "Id", "Description", "Name" },
-                values: new object[,]
-                {
-                    { new Guid("b1f0f611-9a8d-4d6b-9b1c-9af1c8f10001"), "Exhausted or drained.", "Very Low" },
-                    { new Guid("b1f0f611-9a8d-4d6b-9b1c-9af1c8f10002"), "Below usual energy.", "Low" },
-                    { new Guid("b1f0f611-9a8d-4d6b-9b1c-9af1c8f10003"), "Stable energy.", "Moderate" },
-                    { new Guid("b1f0f611-9a8d-4d6b-9b1c-9af1c8f10004"), "Energetic and focused.", "High" }
-                });
-
-            migrationBuilder.InsertData(
                 table: "GeminiQuestions",
                 columns: new[] { "Id", "Category", "IsActive", "QuestionText" },
                 values: new object[,]
@@ -430,29 +404,6 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                     { new Guid("d7f9c2a1-6b7a-4a2f-9c44-5a2f7f000001"), "Digestive", true, "How is your digestion today?" },
                     { new Guid("d7f9c2a1-6b7a-4a2f-9c44-5a2f7f000002"), "Sleep", true, "How restful was your sleep last night?" },
                     { new Guid("d7f9c2a1-6b7a-4a2f-9c44-5a2f7f000003"), "Energy", true, "What is your current energy level?" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "HealthIndicators",
-                columns: new[] { "Id", "Category", "Description", "IsActive", "Name" },
-                values: new object[,]
-                {
-                    { new Guid("6a6165af-2a69-4c6a-b8d1-4d8f9aa30101"), "Digestive", "Bloating, appetite, regularity.", true, "Digestion" },
-                    { new Guid("6a6165af-2a69-4c6a-b8d1-4d8f9aa30102"), "Sleep", "Restful sleep and duration.", true, "Sleep Quality" },
-                    { new Guid("6a6165af-2a69-4c6a-b8d1-4d8f9aa30103"), "Mind", "Mental tension and calmness.", true, "Stress" },
-                    { new Guid("6a6165af-2a69-4c6a-b8d1-4d8f9aa30104"), "Energy", "Daily vitality.", true, "Energy" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "PoopTypes",
-                columns: new[] { "Id", "Description", "Name" },
-                values: new object[,]
-                {
-                    { new Guid("0f9b7d5a-0b78-4b44-8d9a-4e2c2c5f6d44"), "Smooth and soft, ideal.", "Type 4" },
-                    { new Guid("2a0d8b4c-0c6f-4ea1-9f90-4f3c8f4e7b22"), "Sausage-shaped but lumpy.", "Type 2" },
-                    { new Guid("a8b9c2d3-3c2d-4f4b-8e7f-2b4c6d8e9f55"), "Soft blobs, clear-cut.", "Type 5" },
-                    { new Guid("c8f5b8e7-6f5b-4c4a-9b90-8e1a0f7d9c33"), "Cracked surface, normal.", "Type 3" },
-                    { new Guid("f2e2c9a1-4d6b-4abf-9c55-3c2d0e2b1b11"), "Hard lumps, difficult to pass.", "Type 1" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -475,6 +426,11 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                 table: "Coupons",
                 column: "Code",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HealthIndicators_UserId",
+                table: "HealthIndicators",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_HealthSignals_UserId",
@@ -550,9 +506,6 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
                 name: "CouponRedemptions");
 
             migrationBuilder.DropTable(
-                name: "EnergyLevels");
-
-            migrationBuilder.DropTable(
                 name: "GeminiQuestions");
 
             migrationBuilder.DropTable(
@@ -563,9 +516,6 @@ namespace Ayurveda_AI_Backend.Infrastructure.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "McqResponses");
-
-            migrationBuilder.DropTable(
-                name: "PoopTypes");
 
             migrationBuilder.DropTable(
                 name: "PrakritiQuizResponses");
