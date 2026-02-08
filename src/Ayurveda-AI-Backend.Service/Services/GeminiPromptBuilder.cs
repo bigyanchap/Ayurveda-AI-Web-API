@@ -88,7 +88,7 @@ Output must be in **JSON format**, exactly like this:
 5. Avoid generic advice — everything must be **personalized to the user profile below**.
 6. Ensure the language is **friendly, clear, and modern**, suitable for a mobile app user.
 7. Include **why the recommendation helps** in a single sentence.
-
+8. Dietary Constraint when suggesting food: Follow a strictly vegetarian, sattvic Ayurvedic diet. Exclude meat, fish, eggs, and seafood entirely.
 ---
 
 ### Goal
@@ -105,6 +105,7 @@ Generate 6 personalized Ayurveda articles that the user can **read today and imp
 - Weather: {{weather}}
 - Location: {{location}}
 """;
+Console.WriteLine(prompt);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────
