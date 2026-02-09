@@ -2,13 +2,10 @@
     FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
     WORKDIR /src
     
-    # Copy solution and restore
-    COPY Ayurveda-AI-Backend.sln .
     COPY src/ ./src/
     
-    RUN dotnet restore Ayurveda-AI-Backend.sln
+    RUN dotnet restore src/Ayurveda-AI-Backend.WebAPI/Ayurveda-AI-Backend.WebAPI.csproj
     
-    # Publish Web API
     RUN dotnet publish src/Ayurveda-AI-Backend.WebAPI/Ayurveda-AI-Backend.WebAPI.csproj \
         -c Release \
         -o /app/publish
