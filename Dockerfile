@@ -1,15 +1,14 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /source
 
-# Copy the .csproj from the subdirectory
-COPY Ayurveda-AI-Backend.WebAPI/*.csproj ./Ayurveda-AI-Backend.WebAPI/
-WORKDIR /source/Ayurveda-AI-Backend.WebAPI
-RUN dotnet restore
-
-# Copy everything and build
+# Copy everything from the Ayurveda-AI-Backend.WebAPI folder
 COPY Ayurveda-AI-Backend.WebAPI/. .
+
+# Restore and publish
+RUN dotnet restore
 RUN dotnet publish -c Release -o /app
 
+# Runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 COPY --from=build /app .
