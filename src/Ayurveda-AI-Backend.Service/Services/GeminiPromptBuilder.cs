@@ -160,7 +160,7 @@ Generate 6 personalized Ayurveda articles that the user can **read today and imp
 
         return $"""
 - Digestion: {Get("Digestion")}
-- Sleep Quality: {Get("SleepQuality")}
+- Sleep Quality In last 10 days: {Get("SleepQuality")}
 - Working Out (minutes/day): {Get("WorkingOutMinutes")}
 - Nature of Work: {Get("NatureOfWork")}
 - Screen Time: {Get("ScreenTime")}
