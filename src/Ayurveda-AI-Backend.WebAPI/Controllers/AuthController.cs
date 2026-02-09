@@ -36,7 +36,9 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Sign up a new user. Supabase sends an OTP verification code to the email.
+    /// Sign up a new user.
+    /// Uses the Supabase Admin API with email_confirm = true so the user
+    /// is auto-confirmed and can sign in immediately (no OTP required).
     /// </summary>
     [HttpPost("signup")]
     public async Task<IActionResult> SignUp([FromBody] SignUpRequestDto request)
@@ -44,42 +46,86 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
             return BadRequest(new AuthMessageDto("Email and password are required."));
 
-        if (request.Password.Length < 6)
-            return BadRequest(new AuthMessageDto("Password must be at least 6 characters."));
+        if (request.Password.Length < 8)
+            return BadRequest(new AuthMessageDto("Password must be at least 8 characters."));
 
-        var body = new { email = request.Email, password = request.Password };
-        var response = await PostToSupabase("/auth/v1/signup", body);
-        var responseBody = await response.Content.ReadAsStringAsync();
+        if (!request.Password.Any(char.IsLetter))
+            return BadRequest(new AuthMessageDto("Password must contain at least one letter."));
 
-        if (!response.IsSuccessStatusCode)
+        if (!request.Password.Any(char.IsDigit))
+            return BadRequest(new AuthMessageDto("Password must contain at least one digit."));
+
+        // ── Create user via Admin API (email pre-confirmed) ──────────
+        var createBody = new { email = request.Email, password = request.Password, email_confirm = true };
+        var createResponse = await PostToSupabaseAdmin("/auth/v1/admin/users", createBody);
+        var createResponseBody = await createResponse.Content.ReadAsStringAsync();
+
+        if (!createResponse.IsSuccessStatusCode)
         {
-            var error = TryParseError(responseBody);
-            _logger.LogWarning("Supabase signup failed for {Email}: {Error}", request.Email, error);
-            return StatusCode((int)response.StatusCode, new AuthMessageDto(error));
+            var error = TryParseError(createResponseBody);
+
+            // Supabase returns 422 when user already exists
+            if (error.Contains("already been registered", StringComparison.OrdinalIgnoreCase)
+                || error.Contains("email_exists", StringComparison.OrdinalIgnoreCase))
+            {
+                return Conflict(new AuthMessageDto("An account with this email already exists."));
+            }
+
+            _logger.LogWarning("Supabase admin signup failed for {Email}: {Error}", request.Email, error);
+            return StatusCode((int)createResponse.StatusCode, new AuthMessageDto(error));
         }
 
-        // Parse the response
-        using var doc = JsonDocument.Parse(responseBody);
-        var root = doc.RootElement;
+        // ── Sign in immediately to get JWT tokens ────────────────────
+        var loginBody = new { email = request.Email, password = request.Password };
+        var loginResponse = await PostToSupabase("/auth/v1/token?grant_type=password", loginBody);
+        var loginResponseBody = await loginResponse.Content.ReadAsStringAsync();
 
-        // Check if identities is empty (email already exists)
-        if (root.TryGetProperty("identities", out var identities)
-            && identities.ValueKind == JsonValueKind.Array
-            && identities.GetArrayLength() == 0)
+        if (!loginResponse.IsSuccessStatusCode)
         {
-            return Conflict(new AuthMessageDto("An account with this email already exists."));
+            var error = TryParseError(loginResponseBody);
+            _logger.LogWarning("Auto-login after signup failed for {Email}: {Error}", request.Email, error);
+            return StatusCode((int)loginResponse.StatusCode, new AuthMessageDto(error));
         }
 
-        // Check if a session was returned (autoconfirm enabled)
-        if (root.TryGetProperty("access_token", out _))
-        {
-            var authResponse = ParseAuthResponse(root);
-            await EnsureLocalUser(authResponse.UserId, request.Email);
-            return Ok(authResponse);
-        }
+        using var doc = JsonDocument.Parse(loginResponseBody);
+        var authResponse = ParseAuthResponse(doc.RootElement);
+        await EnsureLocalUser(authResponse.UserId, request.Email);
+        return Ok(authResponse);
 
-        // Email confirmation required — OTP was sent
-        return Ok(new AuthMessageDto("Verification code sent to your email. Please check your inbox."));
+        // ── OLD: OTP-based signup (commented out) ────────────────────
+        // var body = new { email = request.Email, password = request.Password };
+        // var response = await PostToSupabase("/auth/v1/signup", body);
+        // var responseBody = await response.Content.ReadAsStringAsync();
+        //
+        // if (!response.IsSuccessStatusCode)
+        // {
+        //     var error = TryParseError(responseBody);
+        //     _logger.LogWarning("Supabase signup failed for {Email}: {Error}", request.Email, error);
+        //     return StatusCode((int)response.StatusCode, new AuthMessageDto(error));
+        // }
+        //
+        // // Parse the response
+        // using var doc = JsonDocument.Parse(responseBody);
+        // var root = doc.RootElement;
+        //
+        // // Check if identities is empty (email already exists)
+        // if (root.TryGetProperty("identities", out var identities)
+        //     && identities.ValueKind == JsonValueKind.Array
+        //     && identities.GetArrayLength() == 0)
+        // {
+        //     return Conflict(new AuthMessageDto("An account with this email already exists."));
+        // }
+        //
+        // // Check if a session was returned (autoconfirm enabled)
+        // if (root.TryGetProperty("access_token", out _))
+        // {
+        //     var authResponse = ParseAuthResponse(root);
+        //     await EnsureLocalUser(authResponse.UserId, request.Email);
+        //     return Ok(authResponse);
+        // }
+        //
+        // // Email confirmation required — OTP was sent
+        // return Ok(new AuthMessageDto("Verification code sent to your email. Please check your inbox."));
     }
 
     /// <summary>
@@ -158,10 +204,12 @@ public class AuthController : ControllerBase
         {
             var error = TryParseError(responseBody);
 
-            if (error.Contains("Email not confirmed", StringComparison.OrdinalIgnoreCase))
-            {
-                return StatusCode(403, new AuthMessageDto("Please verify your email before signing in. Check your inbox for the verification code."));
-            }
+            // Email confirmation is now disabled (users are auto-confirmed on signup).
+            // Keeping this as a fallback in case Supabase settings change.
+            // if (error.Contains("Email not confirmed", StringComparison.OrdinalIgnoreCase))
+            // {
+            //     return StatusCode(403, new AuthMessageDto("Please verify your email before signing in. Check your inbox for the verification code."));
+            // }
 
             _logger.LogWarning("Login failed for {Email}: {Error}", request.Email, error);
             return StatusCode((int)response.StatusCode, new AuthMessageDto(error));
@@ -220,6 +268,22 @@ public class AuthController : ControllerBase
 
         var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
         request.Headers.Add("apikey", _supabaseOptions.ApiKey);
+
+        return await _httpClient.SendAsync(request);
+    }
+
+    /// <summary>
+    /// POST to a Supabase Admin endpoint (requires service_role key as Bearer token).
+    /// </summary>
+    private async Task<HttpResponseMessage> PostToSupabaseAdmin(string path, object body)
+    {
+        var url = $"{_supabaseOptions.Url}{path}";
+        var json = JsonSerializer.Serialize(body);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
+        request.Headers.Add("apikey", _supabaseOptions.ApiKey);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _supabaseOptions.ApiKey);
 
         return await _httpClient.SendAsync(request);
     }
