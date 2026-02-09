@@ -44,11 +44,13 @@ public class GeminiService : IGeminiService
         var weather = request.Weather ?? "Unknown";
         var location = request.Location ?? profile?.Country ?? "Unknown";
 
-        var prompt = GeminiPromptBuilder.BuildChatPrompt(
-            profile, prakriti, indicators, timeOfDay, weather, location, request.Message);
+        var systemPrompt = GeminiPromptBuilder.BuildChatSystemPrompt(
+            profile, prakriti, indicators, timeOfDay, weather, location);
 
-        _logger.LogInformation("Generating chat response for user {UserId}", request.UserId);
-        var responseText = await CallGeminiAsync(prompt);
+        _logger.LogInformation("Generating chat response for user {UserId} (history: {HistoryCount} messages)",
+            request.UserId, request.History?.Count ?? 0);
+
+        var responseText = await CallGeminiMultiTurnAsync(systemPrompt, request.History, request.Message);
         return new ChatResponseDto(responseText, DateTime.UtcNow);
     }
 
@@ -101,6 +103,82 @@ public class GeminiService : IGeminiService
             < 21 => "Evening",
             _ => "Night"
         };
+    }
+
+    /// <summary>
+    /// Call Gemini with system instruction + multi-turn conversation history.
+    /// </summary>
+    private async Task<string> CallGeminiMultiTurnAsync(
+        string systemPrompt,
+        IReadOnlyList<ChatHistoryItemDto>? history,
+        string currentMessage)
+    {
+        var url = $"{_options.Endpoint}/{_options.Model}:generateContent?key={_options.ApiKey}";
+
+        // Build the contents array: history turns + current user message
+        var contents = new List<object>();
+
+        if (history != null)
+        {
+            foreach (var item in history)
+            {
+                var role = item.Role == "ai" ? "model" : "user";
+                contents.Add(new { role, parts = new[] { new { text = item.Text } } });
+            }
+        }
+
+        // Current user message
+        contents.Add(new { role = "user", parts = new[] { new { text = currentMessage } } });
+
+        var payload = new
+        {
+            system_instruction = new { parts = new[] { new { text = systemPrompt } } },
+            contents
+        };
+
+        HttpResponseMessage response;
+        try
+        {
+            response = await _httpClient.PostAsJsonAsync(url, payload);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to reach Gemini API");
+            return "I'm having trouble connecting to my AI service right now. Please try again in a moment.";
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync();
+            _logger.LogError("Gemini API returned {StatusCode}: {Body}", (int)response.StatusCode, errorBody);
+            response.Dispose();
+            return "I could not generate a response right now. Please try again.";
+        }
+
+        try
+        {
+            using (response)
+            {
+                using var responseStream = await response.Content.ReadAsStreamAsync();
+                using var document = await JsonDocument.ParseAsync(responseStream);
+                var text = document
+                    .RootElement
+                    .GetProperty("candidates")[0]
+                    .GetProperty("content")
+                    .GetProperty("parts")[0]
+                    .GetProperty("text")
+                    .GetString();
+
+                return string.IsNullOrWhiteSpace(text)
+                    ? "I could not generate a response right now. Please try again."
+                    : text;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to parse Gemini response");
+            return "I could not generate a response right now. Please try again.";
+        }
     }
 
     private async Task<string> CallGeminiAsync(string prompt)

@@ -2,7 +2,8 @@ using Ayurveda_AI_Backend.Domain.Enums;
 
 namespace Ayurveda_AI_Backend.Domain.DTOs;
 
-public record ChatRequestDto(Guid UserId, string Message, string? TimeOfDay, string? Weather, string? Location);
+public record ChatHistoryItemDto(string Role, string Text);
+public record ChatRequestDto(Guid UserId, string Message, string? TimeOfDay, string? Weather, string? Location, IReadOnlyList<ChatHistoryItemDto>? History = null);
 public record ChatResponseDto(string Response, DateTime RespondedAt);
 
 public record ArticleDto(

@@ -5,8 +5,45 @@ namespace Ayurveda_AI_Backend.Service.Services;
 public static class GeminiPromptBuilder
 {
     /// <summary>
-    /// Build a personalized chat prompt using the user's Prakriti, HealthIndicators
-    /// (including DOB, Weight, Height), and real-time context (timeOfDay, weather, location).
+    /// Build the system instruction for multi-turn chat.
+    /// Contains the AI persona, user health profile, and current context.
+    /// The user message is NOT included — it goes in the Gemini contents array.
+    /// </summary>
+    public static string BuildChatSystemPrompt(
+        UserProfile? profile,
+        PrakritiResult? prakriti,
+        IReadOnlyList<HealthIndicator> indicators,
+        string timeOfDay,
+        string weather,
+        string location)
+    {
+        var indicatorBlock = FormatIndicators(indicators);
+        var bodyBlock = FormatBodyMetrics(indicators);
+
+        return $"""
+You are an Ayurvedic health companion.
+Provide concise, practical, and personalized lifestyle guidance rooted in classical Ayurveda.
+Always tailor your response using the user's Prakriti, HealthIndicators, Time of Day, Weather, and Location when available.
+If any required information is missing, offer safe general guidance and gently encourage the user to complete their profile for more accurate recommendations. Do this at the end of your response.
+Use educational and preventive framing only — no diagnosis, treatment, or medical claims.
+When using Sanskrit terms, always include a clear English translation in parentheses on first use.
+Maintain a calm, respectful, non-judgmental tone.
+
+### User Health Profile
+- Prakriti: {FormatPrakriti(prakriti)}
+{indicatorBlock}
+{bodyBlock}
+- Gender: {FormatGender(profile, indicators)}
+
+### Current Context
+- Time of Day: {timeOfDay}
+- Weather: {weather}
+- Location: {location}
+""";
+    }
+
+    /// <summary>
+    /// [Legacy] Single-shot chat prompt (system prompt + user message in one string).
     /// </summary>
     public static string BuildChatPrompt(
         UserProfile? profile,
@@ -17,32 +54,8 @@ public static class GeminiPromptBuilder
         string location,
         string userMessage)
     {
-        var indicatorBlock = FormatIndicators(indicators);
-        var bodyBlock = FormatBodyMetrics(indicators);
-
-        return $"""
-You are an Ayurvedic health companion.
-Provide concise, practical, and personalized lifestyle guidance rooted in classical Ayurveda.
-Always tailor your response using the user’s Prakriti, HealthIndicators, Time of Day, Weather, and Location when available.
-If any required information is missing, offer safe general guidance and gently encourage the user to complete their profile for more accurate recommendations. Do this at the end of your response.
-Use educational and preventive framing only — no diagnosis, treatment, or medical claims.
-When using Sanskrit terms, always include a clear English translation in parentheses on first use.
-Maintain a calm, respectful, non-judgmental tone.
-
-### User Health Profile
-- Prakriti: {FormatPrakriti(prakriti)}
-{indicatorBlock}
-{bodyBlock}
-- Gender: {profile?.Gender.ToString() ?? "Unknown"}
-
-### Current Context
-- Time of Day: {timeOfDay}
-- Weather: {weather}
-- Location: {location}
-
-### User Message
-{userMessage}
-""";
+        return BuildChatSystemPrompt(profile, prakriti, indicators, timeOfDay, weather, location)
+            + $"\n### User Message\n{userMessage}";
     }
 
     /// <summary>
@@ -106,7 +119,7 @@ Generate 6 personalized Ayurveda articles that the user can **read today and imp
 - Prakriti: {{FormatPrakriti(prakriti)}}
 {{FormatIndicators(indicators)}}
 {{FormatBodyMetrics(indicators)}}
-- Gender: {{profile?.Gender.ToString() ?? "Unknown"}}
+- Gender: {{FormatGender(profile, indicators)}}
 - Time of Day: {{timeOfDay}}
 - Weather: {{weather}}
 - Location: {{location}}
@@ -124,9 +137,21 @@ Generate 6 personalized Ayurveda articles that the user can **read today and imp
     }
 
     /// <summary>
+    /// Resolve gender from UserProfile first, then fall back to HealthIndicator "Gender".
+    /// </summary>
+    private static string FormatGender(UserProfile? profile, IReadOnlyList<HealthIndicator> indicators)
+    {
+        // UserProfile.Gender is the authoritative source
+        if (profile != null && profile.Gender != Domain.Enums.Gender.Unknown)
+            return profile.Gender.ToString();
+
+        // Fall back to HealthIndicator "Gender" (set during onboarding quiz)
+        var genderIndicator = indicators.FirstOrDefault(i => i.Indication == "Gender")?.Value;
+        return string.IsNullOrWhiteSpace(genderIndicator) ? "Unknown" : genderIndicator;
+    }
+
+    /// <summary>
     /// Format HealthIndicator values into a readable block.
-    /// Expected Indication values: Digestion, WorkingOutMinutes, NatureOfWork,
-    /// ScreenTime, ChronicConditions, NutritionDeficiency
     /// </summary>
     private static string FormatIndicators(IReadOnlyList<HealthIndicator> indicators)
     {
@@ -135,6 +160,7 @@ Generate 6 personalized Ayurveda articles that the user can **read today and imp
 
         return $"""
 - Digestion: {Get("Digestion")}
+- Sleep Quality: {Get("SleepQuality")}
 - Working Out (minutes/day): {Get("WorkingOutMinutes")}
 - Nature of Work: {Get("NatureOfWork")}
 - Screen Time: {Get("ScreenTime")}
@@ -145,8 +171,6 @@ Generate 6 personalized Ayurveda articles that the user can **read today and imp
 
     /// <summary>
     /// Extract Age, Weight, and Height from HealthIndicator records.
-    /// DOB is stored as an ISO date string; age is calculated from it.
-    /// Weight is stored in kg, Height in cm.
     /// </summary>
     private static string FormatBodyMetrics(IReadOnlyList<HealthIndicator> indicators)
     {
