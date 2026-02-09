@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /source
 
 # Copy everything from the Ayurveda-AI-Backend.WebAPI folder
-COPY Ayurveda-AI-Backend.WebAPI/. .
+COPY src/Ayurveda-AI-Backend.WebAPI/
 
 # Restore and publish
 RUN dotnet restore
