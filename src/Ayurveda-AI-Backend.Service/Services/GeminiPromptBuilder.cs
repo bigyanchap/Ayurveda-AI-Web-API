@@ -105,9 +105,10 @@ Output must be in **JSON format**, exactly like this:
 5. Avoid generic advice — everything must be **personalized to the user profile below**.
 6. Ensure the language is **friendly, clear, and modern**, suitable for a mobile app user.
 7. Include **why the recommendation helps** in a single sentence.
-8. Dietary Constraint when recommending food: - Strictly Vegetarian-only, that is, No meat, fish, eggs, or seafood.
-9. If protein or nourishment is needed: Prefer lentils, legumes, dairy (if suitable), nuts, seeds, and Ayurvedic plant sources.
-10. Sanskrit terms must be accompanied by an English translation in parentheses.
+8. Dietary Constraint when recommending food: - Strictly Vegetarian, that is, No meat, fish, eggs, or seafood.
+9. Dietary Constraint 2: Admonish not to eat junk food, processed food, and refined sugar. Instead, prefer whole, natural foods.
+10. If protein or nourishment is needed: Prefer lentils, legumes, dairy (if suitable), nuts, seeds, and Ayurvedic plant sources.
+11. Sanskrit terms must be accompanied by an English translation in parentheses.
 ---
 
 ### Goal
