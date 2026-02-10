@@ -95,8 +95,8 @@ public class Startup
             app.UseSwaggerUI();
         }
 
-        app.UseHttpsRedirection();
         app.UseCors("DefaultCors");
+        app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();
 
