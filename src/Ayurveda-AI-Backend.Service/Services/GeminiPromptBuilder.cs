@@ -98,32 +98,31 @@ Output must be in **JSON format**, exactly like this:
 
 ### Instructions for content
 
-1. Articles must be **short and actionable** (100–200 words each).
-2. Advice must match the **user's dosha and health indicators**. If data is missing, give general advice and mention that personalization improves with a completed profile.
-3. Include **weather and location-based adjustments**.
-4. Focus on **easily implementable tips**.
-5. Avoid generic advice — everything must be **personalized to the user profile below**.
-6. Ensure the language is **friendly, clear, and modern**, suitable for a mobile app user.
-7. Include **why the recommendation helps** in a single sentence.
-8. Dietary Constraint when recommending food: - Strictly Vegetarian, that is, No meat, fish, eggs, or seafood.
-9. Dietary Constraint 2: Admonish not to eat junk food, processed food, and refined sugar. Instead, prefer whole, natural foods.
-10. If protein or nourishment is needed: Prefer lentils, legumes, dairy (if suitable), nuts, seeds, and Ayurvedic plant sources.
-11. Sanskrit terms must be accompanied by an English translation in parentheses.
+1. Articles must be short and actionable (100–200 words each).
+2. Advice must match the user's User Health Profile & Context (Provided below), Weather, time of day, and location.
+3. If data is missing, give general advice. Mention that personalization improves with a completed profile only if any data is missing.
+4. Focus on easily implementable tips.
+5. Ensure the language is **friendly, clear, and modern**, suitable for a mobile app user.
+6. Include why the recommendation helps in a single sentence.
+7. Dietary Constraint when recommending food: - Strictly Vegetarian, that is, No meat, fish, eggs, or seafood.
+8. Dietary Constraint 2: Admonish not to eat junk food, processed food, and refined sugar. Instead, prefer whole, natural foods.
+9. If protein or nourishment is needed: Prefer lentils, legumes, dairy (if suitable), nuts, seeds, and Ayurvedic plant sources.
+10. Sanskrit terms must be accompanied by an English translation in parentheses.
 ---
 
 ### Goal
 
 Generate 6 personalized Ayurveda articles that the user can **read today and implement immediately**.
 
-### User Health Profile & Context
+### User Health Profile & Context:
 
-- Prakriti: {{FormatPrakriti(prakriti)}}
+Prakriti: {{FormatPrakriti(prakriti)}}
 {{FormatIndicators(indicators)}}
 {{FormatBodyMetrics(indicators)}}
-- Gender: {{FormatGender(profile, indicators)}}
-- Time of Day: {{timeOfDay}}
-- Weather: {{weather}}
-- Location: {{location}}
+Gender: {{FormatGender(profile, indicators)}}
+Time of Day: {{timeOfDay}}
+Weather: {{weather}}
+Location: {{location}}
 """;
     }
 
@@ -166,6 +165,7 @@ Generate 6 personalized Ayurveda articles that the user can **read today and imp
 - Nature of Work: {Get("NatureOfWork")}
 - Screen Time: {Get("ScreenTime")}
 - Chronic Conditions: {Get("ChronicConditions")}
+- Recent Discomforts: {Get("RecentDiscomforts")}
 - Nutrition Deficiency: {Get("NutritionDeficiency")}
 """;
     }
