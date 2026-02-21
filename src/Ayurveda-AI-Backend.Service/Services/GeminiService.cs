@@ -97,11 +97,12 @@ public class GeminiService : IGeminiService
     {
         return DateTime.Now.Hour switch
         {
-            < 6 => "Early Morning",
-            < 12 => "Morning",
-            < 17 => "Afternoon",
-            < 21 => "Evening",
-            _ => "Night"
+            >= 2 and < 6 => "Early Morning (Brahma-Muhurta, 2am-6am)",
+            >= 6 and < 10 => "Morning (6am-10am)",
+            >= 10 and < 14 => "Midday (10am-2pm)",
+            >= 14 and < 18 => "Afternoon (2pm-6pm)",
+            >= 18 and < 20 => "Evening (6pm-8pm)",
+            _ => "Night (8pm-2pm)"
         };
     }
 
